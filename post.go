@@ -60,7 +60,7 @@ func processPost(raw any) error {
 	}
 
 	bundlePath := filepath.Join(postsPath, post.getBundlePath())
-	os.MkdirAll(bundlePath, 0770)
+	os.MkdirAll(bundlePath, 0777)
 
 	// downloading for now. we need a toggle switch to avoid saving assets that we already have.
 
