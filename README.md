@@ -1,2 +1,3 @@
 # ghosthugo
-import content from ghost cms
+
+Import content from ghost cms
