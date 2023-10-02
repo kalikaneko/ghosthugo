@@ -42,22 +42,22 @@ func parseTimestamp(ts any) time.Time {
 // processPost is the main action for any raw post. It will create a Post struct,
 // download the feature image, and dump the serialized version into the current
 // hugo content folder.
-func processPost(raw itemJSON) error {
-	// data := raw.(map[string]any)
-	data := raw
-
+func processPost(data itemJSON) error {
 	post := &Post{
-		Title:        getString(data["title"]),
-		Slug:         getString(data["slug"]),
-		Description:  getString(data["excerpt"]),
-		Summary:      getString(data["excerpt"]),
-		Created:      parseTimestamp(data["created_at"]),
-		LastModified: parseTimestamp(data["updated_at"]),
-		Published:    parseTimestamp(data["published_at"]),
-		Lang:         defaultLang,
-		content:      getString(data["html"]),
-		FeatureImage: getString(data["feature_image"]),
-		ReadingTime:  getFloat(data["reading_time"]),
+		Title:         getString(data["title"]),
+		Slug:          getString(data["slug"]),
+		Description:   getString(data["excerpt"]),
+		Summary:       getString(data["excerpt"]),
+		Created:       parseTimestamp(data["created_at"]),
+		LastModified:  parseTimestamp(data["updated_at"]),
+		Published:     parseTimestamp(data["published_at"]),
+		Lang:          defaultLang,
+		content:       getString(data["html"]),
+		FeaturedImage: getString(data["feature_image"]),
+		ReadingTime:   getFloat(data["reading_time"]),
+		Images:        []string{},
+		Audio:         []string{},
+		Videos:        []string{},
 	}
 
 	bundlePath := filepath.Join(postsPath, post.getBundlePath())
@@ -65,12 +65,16 @@ func processPost(raw itemJSON) error {
 
 	// downloading for now. we need a toggle switch to avoid saving assets that we already have.
 
-	if post.FeatureImage != "null" {
-		fn := filenameFromURL(post.FeatureImage)
-		err := downloadFile(filepath.Join(bundlePath, fn), post.FeatureImage)
+	if post.FeaturedImage != "null" {
+		fn := filenameFromURL(post.FeaturedImage)
+		err := downloadFile(filepath.Join(bundlePath, fn), post.FeaturedImage)
 		if err != nil {
 			fmt.Println("Error:", err)
 		}
+
+		// store the local path, once that we have downloaded it to the bundle
+		post.FeaturedImage = fn
+		post.Images = append(post.Images, fn)
 	}
 
 	post.content = postProcessHTML(post.content, bundlePath)
@@ -94,7 +98,7 @@ type Post struct {
 	Lang    string
 	content string
 
-	FeatureImage string `toml:"feature_image"`
+	FeaturedImage string `toml:"featured_image"`
 
 	Images []string
 	Audio  []string

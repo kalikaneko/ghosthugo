@@ -134,6 +134,7 @@ func dumpEventAsDataFile(name string, event *Event) {
 		return
 	}
 	f.Write(out)
+	fmt.Println("[+] Event written as", path)
 }
 
 // processEventsFromPages iterates through all pages. In the case that the page has the tag
