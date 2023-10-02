@@ -9,17 +9,33 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	toml "github.com/pelletier/go-toml"
 )
 
 var (
-	defaultLang  = "en"
-	postEndpoint = "/ghost/api/content/posts/"
-	postsPath    = "content/posts"
+	defaultLang   = "en"
+	api           = "/ghost/api/content"
+	pagesEndpoint = api + "/pages/"
+	postEndpoint  = api + "/posts/"
+	postsPath     = "content/posts"
 
 	internetArchiveAudioPrefix = "https://archive.org/download/"
 )
 
-func main() {
+func getFromConfig(section string) (string, error) {
+	config, err := toml.LoadFile("hugo.toml")
+	if err != nil {
+		return "", err
+	}
+	_section := config.Get(section)
+	if _section == nil {
+		return "", nil
+	}
+	return config.Get(section).(string), nil
+
+}
+
+func doRequest(endpoint string) *http.Response {
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalf("Err: %s", err)
@@ -32,8 +48,7 @@ func main() {
 		fmt.Println("Need GHOST_URL and GHOST_KEY")
 		os.Exit(1)
 	}
-
-	url := baseURL + postEndpoint + "?key=" + key
+	url := baseURL + endpoint + "?key=" + key
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -43,11 +58,22 @@ func main() {
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	if resp != nil {
-		defer resp.Body.Close()
-	}
 	if err != nil {
 		log.Fatal(err)
+	}
+	return resp
+}
+
+func processEventsFromPages() {
+	fmt.Println("[+] Fetching all pages")
+}
+
+func processAllPosts() {
+	fmt.Println("[+] Processing all posts")
+	// get Posts
+	resp := doRequest(postEndpoint)
+	if resp != nil {
+		defer resp.Body.Close()
 	}
 
 	body, readErr := ioutil.ReadAll(resp.Body)
@@ -79,4 +105,20 @@ func main() {
 			fmt.Println("error:", err)
 		}
 	}
+}
+
+func main() {
+	eventTag, err := getFromConfig("ghosthugo.events.tag")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("events", eventTag)
+
+	if eventTag != "" {
+		processEventsFromPages()
+	}
+
+	processAllPosts()
+
 }
