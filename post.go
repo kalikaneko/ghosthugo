@@ -42,8 +42,9 @@ func parseTimestamp(ts any) time.Time {
 // processPost is the main action for any raw post. It will create a Post struct,
 // download the feature image, and dump the serialized version into the current
 // hugo content folder.
-func processPost(raw any) error {
-	data := raw.(map[string]any)
+func processPost(raw itemJSON) error {
+	// data := raw.(map[string]any)
+	data := raw
 
 	post := &Post{
 		Title:        getString(data["title"]),
