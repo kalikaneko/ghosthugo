@@ -8,10 +8,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/joho/godotenv"
 	toml "github.com/pelletier/go-toml"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -115,8 +117,39 @@ func doRequest(endpoint string, itemType string, ch chan itemJSON) {
 	}
 }
 
+type Event struct {
+	Title   string
+	Content string
+}
+
+func dumpEventAsDataFile(name string, event *Event) {
+	out, err := yaml.Marshal(event)
+	if err != nil {
+		panic(err)
+	}
+	path := filepath.Join("data", "events", name+".yaml")
+	f, err := os.Create(path)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	f.Write(out)
+}
+
+// processEventsFromPages iterates through all pages. In the case that the page has the tag
+// configured as target, we will dump a yaml file under hugo's data folder with the contents
+// of the page.
 func processEventsFromPages() {
 	fmt.Println("[+] Fetching all pages")
+
+	eventTag, err := getFromConfig("ghosthugo.events.tag")
+	if err != nil {
+		panic(err)
+	}
+	dataFile, err := getFromConfig("ghosthugo.events.data")
+	if err != nil {
+		panic(err)
+	}
 
 	pages := make(chan itemJSON)
 	go doRequest(pagesEndpoint, "pages", pages)
@@ -127,15 +160,21 @@ func processEventsFromPages() {
 
 		tags := page["tags"]
 		if tags != nil {
-			for _, tag := range tags.([]interface{}) {
-				t := tag.(map[string]any)
-				fmt.Println("tag:", t["slug"])
+			for _, _tag := range tags.([]interface{}) {
+				tag := _tag.(map[string]any)["slug"]
+
+				if tag == eventTag {
+					event := &Event{
+						Title:   page["title"].(string),
+						Content: page["html"].(string),
+					}
+					dumpEventAsDataFile(dataFile, event)
+					return
+				}
 			}
 		}
-
 	}
-	// get first page
-	// convert into yaml
+	fmt.Println("no matching tag")
 }
 
 func processAllPosts() {
