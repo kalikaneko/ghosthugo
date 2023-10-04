@@ -32,7 +32,7 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-USER 1000
+#USER 1000
 
 ENTRYPOINT [ "/usr/local/bin/ghosthugo_entrypoint.sh" ]
 
