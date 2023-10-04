@@ -22,6 +22,7 @@ RUN mkdir /site
 VOLUME /site
 
 RUN apt-get update && \
+    apt-get install -y nodejs npm && \
     apt-get install -y git "${BUILD_DEPS}" && \
     wget "${HUGO_URL}" && \
     apt-get install "./${HUGO_NAME}.deb" && \
