@@ -24,12 +24,18 @@ var (
 	postsPath     = "content/posts"
 
 	internetArchiveAudioPrefix = "https://archive.org/download/"
+
+	errLastPage = errors.New("lastPage")
 )
 
 func getFromConfig(section string) (string, error) {
 	config, err := toml.LoadFile("hugo.toml")
 	if err != nil {
-		return "", err
+		config, err = toml.LoadFile("config/_default/hugo.toml")
+		if err != nil {
+			fmt.Println("error:", err)
+			return "", err
+		}
 	}
 	_section := config.Get(section)
 	if _section == nil {
@@ -42,9 +48,9 @@ func getFromConfig(section string) (string, error) {
 type itemJSON map[string]interface{}
 
 func doRequest(endpoint string, itemType string, ch chan itemJSON) {
-	err := godotenv.Load(".env")
+	err := godotenv.Overload(".env")
 	if err != nil {
-		log.Fatalf("Err: %s", err)
+		log.Printf("Error loading .env file: %s", err)
 	}
 
 	baseURL := os.Getenv("GHOST_URL")
@@ -99,21 +105,18 @@ func doRequest(endpoint string, itemType string, ch chan itemJSON) {
 			current := pages["page"].(float64)
 			total := int(pages["total"].(float64)) / int(pages["limit"].(float64))
 			next := pages["next"]
-			fmt.Println("next", next)
 			if next == nil {
 				close(ch)
-				return errors.New("lastPage")
+				return errLastPage
 			}
 			fmt.Println("Page", current, "of", total)
-
 			return nil
 		}()
-		// TODO catch error == last page only
-		if err != nil {
+		if errors.Is(err, errLastPage) {
 			break
 		}
 		page += 1
-		fmt.Println("request next page")
+		fmt.Println("request next page...")
 	}
 }
 
@@ -122,12 +125,15 @@ type Event struct {
 	Content string
 }
 
+// dumpEventAsDataFile takes an event and marshals it as a yaml file
+// in the data/events/[name].yaml path.
 func dumpEventAsDataFile(name string, event *Event) {
 	out, err := yaml.Marshal(event)
 	if err != nil {
 		panic(err)
 	}
 	path := filepath.Join("data", "events", name+".yaml")
+	os.MkdirAll("data/events", 0777)
 	f, err := os.Create(path)
 	if err != nil {
 		fmt.Println(err)
@@ -163,12 +169,12 @@ func processEventsFromPages() {
 		if tags != nil {
 			for _, _tag := range tags.([]interface{}) {
 				tag := _tag.(map[string]any)["slug"]
-
 				if tag == eventTag {
 					event := &Event{
 						Title:   page["title"].(string),
 						Content: page["html"].(string),
 					}
+					// we do not process beyond the first occurence
 					dumpEventAsDataFile(dataFile, event)
 					return
 				}
@@ -178,6 +184,8 @@ func processEventsFromPages() {
 	fmt.Println("no matching tag")
 }
 
+// processAllPosts iterates through all the available post in the ghost
+// CMS, and call the processing function for each of them.
 func processAllPosts() {
 	fmt.Println("[+] Processing all posts")
 
@@ -199,7 +207,5 @@ func main() {
 	if eventTag != "" {
 		processEventsFromPages()
 	}
-
 	processAllPosts()
-
 }

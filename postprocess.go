@@ -91,7 +91,7 @@ func postProcessHTML(htmlContent string, bundledir string) string {
 			audioPlayer := fmt.Sprintf(`<div class="audioplayer"><audio controls style="width:100%%;">
   <source src="%s" type="audio/mpeg">
   Your browser does not support the audio element.
-</audio><span><a class="audio-download-link" href="%s" target="_blank" rel="noopener noreferrer">Descarga</a></div>`, href, href)
+</audio><span><a class="audio-download-link" href="%s" rel="noreferrer" download="fuga">Descarga</a></div>`, href, href)
 
 			// Replace the link with the audio player
 			s.ReplaceWithHtml(audioPlayer)
