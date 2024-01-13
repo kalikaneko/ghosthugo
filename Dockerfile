@@ -14,7 +14,7 @@ FROM debian:12-slim
 COPY --from=builder /workdir/ghosthugo /usr/local/bin/ghosthugo
 COPY ghosthugo_entrypoint.sh /usr/local/bin/ghosthugo_entrypoint.sh
 
-ENV HUGO_VERSION='0.117.0'
+ENV HUGO_VERSION='0.121.2'
 ENV HUGO_NAME="hugo_extended_${HUGO_VERSION}_Linux-amd64"
 ENV HUGO_URL="https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/${HUGO_NAME}.deb"
 ENV BUILD_DEPS="wget"
@@ -27,6 +27,7 @@ RUN apt-get update && \
     wget "${HUGO_URL}" && \
     apt-get install "./${HUGO_NAME}.deb" && \
     rm -rf "./${HUGO_NAME}.deb" "${HUGO_NAME}" && \
+    apt-get install -y ssh rsync \
     apt-get remove -y "${BUILD_DEPS}" && \
     apt-get autoremove -y && \
     apt-get clean && \
