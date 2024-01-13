@@ -60,7 +60,12 @@ func processPost(data itemJSON) error {
 		Videos:        []string{},
 	}
 
-	bundlePath := filepath.Join(postsPath, post.getBundlePath())
+	contentBase := os.Getenv("HUGO_CONTENT")
+	if contentBase == "" {
+		contentBase = postsPath
+	}
+
+	bundlePath := filepath.Join(contentBase, post.getBundlePath())
 	os.MkdirAll(bundlePath, 0777)
 
 	// downloading for now. we need a toggle switch to avoid saving assets that we already have.
