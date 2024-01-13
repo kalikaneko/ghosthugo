@@ -60,12 +60,7 @@ func processPost(data itemJSON) error {
 		Videos:        []string{},
 	}
 
-	contentBase := os.Getenv("HUGO_CONTENT")
-	if contentBase == "" {
-		contentBase = postsPath
-	}
-
-	bundlePath := filepath.Join(contentBase, post.getBundlePath())
+	bundlePath := post.getBundlePath()
 	os.MkdirAll(bundlePath, 0777)
 
 	// downloading for now. we need a toggle switch to avoid saving assets that we already have.
@@ -113,7 +108,7 @@ type Post struct {
 }
 
 func (p *Post) Dump() error {
-	out, err := os.Create(filepath.Join(postsPath, p.getBundlePath(), "index.md"))
+	out, err := os.Create(filepath.Join(p.getBundlePath(), "index.md"))
 	if err != nil {
 		return err
 	}
@@ -131,5 +126,9 @@ func (p *Post) Dump() error {
 }
 
 func (p *Post) getBundlePath() string {
-	return fmt.Sprintf("%d-%d-%s", p.Created.Year(), p.Created.Month(), p.Slug)
+	contentBase := os.Getenv("HUGO_CONTENT")
+	if contentBase == "" {
+		contentBase = postsPath
+	}
+	return filepath.Join(contentBase, fmt.Sprintf("%d-%d-%s", p.Created.Year(), p.Created.Month(), p.Slug))
 }
