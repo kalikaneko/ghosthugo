@@ -27,7 +27,7 @@ RUN apt-get update && \
     wget "${HUGO_URL}" && \
     apt-get install "./${HUGO_NAME}.deb" && \
     rm -rf "./${HUGO_NAME}.deb" "${HUGO_NAME}" && \
-    apt-get install -y ssh rsync \
+    apt-get install -y ssh-client rsync && \
     apt-get remove -y "${BUILD_DEPS}" && \
     apt-get autoremove -y && \
     apt-get clean && \
